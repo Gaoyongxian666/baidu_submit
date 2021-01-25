@@ -205,24 +205,25 @@ class Update_window(object):
         self.newroot.wm_attributes('-topmost', 1)
         win_width = self.newroot.winfo_screenwidth()
         win_higth = self.newroot.winfo_screenheight()
-        width_adjust = (win_width - 400) / 2
+        width_adjust = (win_width - 800) / 2
         higth_adjust = (win_higth - 250) / 2
-        self.newroot.geometry("%dx%d+%d+%d" % (400, 250, width_adjust, higth_adjust))
+        self.newroot.geometry("%dx%d+%d+%d" % (800, 250, width_adjust, higth_adjust))
 
         # 进度条
-        self.bar = ttk.Progressbar(self.newroot, length=300, mode="indeterminate",orient=tk.HORIZONTAL)
+        self.bar = ttk.Progressbar(self.newroot, length=740, mode="indeterminate",orient=tk.HORIZONTAL)
         self.bar.pack(expand=True)
         self.bar.start(10)
 
         # 提示内容
         self.content = tk.Label(self.newroot, text="正在下载Sitemap.xml文件...")
-        self.content.place(x=50, y=30, )
+        self.content.place(x=30, y=30, )
         self.content2 = tk.Label(self.newroot, text="下载速度和文件大小以及服务器带宽有关，请耐心等待......")
-        self.content2.place(x=50, y=60, )
+        self.content2.place(x=30, y=60, )
 
         self.eblog = eblog
         self.sitemap = sitemap
         self.tree = tree
+        self.mydict = SqliteDict('./my_db.sqlite', autocommit=True)
 
         # 开启处理线程
         self.p = Thread(target=self.update)
@@ -246,26 +247,37 @@ class Update_window(object):
                 f.write(requests.get(self.sitemap).content)
             with open("sitemap.xml", 'r', encoding='utf-8') as f:
                 xml_data = f.read()
-            self.content.configure(text="Sitemap文件下载完成，解析快慢与文件大小有关")
+            self.content.configure(text="Sitemap文件下载完成，正在对比分析....")
             urls = re.findall(r'<loc>(.+?)</loc>', xml_data, re.S)
             self.eblog.log("Sitemap线程：下载Sitemap.xml完成,正在解析xml文件...")
 
-            # 删除所有
-            mydict = SqliteDict('./my_db.sqlite', autocommit=True)
-            mydict.clear()
-            x = self.tree.get_children()
-            for item in x:
-                self.tree.delete(item)
+            tuple_list=sorted(self.mydict.iteritems())
+            tree_urls = [i[0] for i in tuple_list]
+            # 求交集
+            c=list(set(urls).intersection(set(tree_urls)))
 
-            # 重新解析
-            len_items = len(urls)
-            i = 0
-            for url in urls:
-                i = i + 1
-                self.content2.config(text="当前正处理：第" + str(i) + "个，共有" + str(len_items) + "个链接")
+            # tree中多余的
+            tree_urls_ = list(set(tree_urls).difference(set(c)))
+
+            # 交集不动,tree把tree中把不是交集的删掉,把siemaop中不是交集的增添上.
+            for key, value in tuple_list:
+                self.content2.config(text="当前处理:" + key)
+                if key not in c:
+                    # 是否删除,看有没有列表
+                    if len(self.tree.get_children())!=0:
+                        self.tree.delete(value[4])
+
+                    self.mydict.__delitem__(key=key)
+                    self.eblog.log("Sitemap线程:本地删除"+key)
+
+            # sitemap中新添加的
+            urls_=list(set(urls).difference(set(c)))
+            for url in urls_:
                 cur_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 iid = self.append_item([url, "未提交","未提交", cur_time])
-                mydict[url] = [url, "未提交","未提交", cur_time, iid]
+                self.mydict[url] = [url, "未提交","未提交", cur_time, iid]
+                self.content2.config(text="当前处理:正在添加"+url)
+                self.eblog.log("Sitemap线程:本地添加"+url)
             self.eblog.log("Sitemap线程：关闭sitemap线程,更新完成。")
             self.close()
         except:
@@ -638,7 +650,7 @@ class Wait_window(object):
 
 
 if __name__ == "__main__":
-    main = Main_window("百度站长提交工具V0.1 开源软件放心用 Github地址：https://github.com/Gaoyongxian666/baidu_submit", "favicon.ico")
+    main = Main_window("百度站长提交工具V0.2 开源软件放心用 Github地址：https://github.com/Gaoyongxian666/baidu_submit", "favicon.ico")
 
 
 
