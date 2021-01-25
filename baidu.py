@@ -249,7 +249,7 @@ class Update_window(object):
                 xml_data = f.read()
             self.content.configure(text="Sitemap文件下载完成，正在对比分析....")
             urls = re.findall(r'<loc>(.+?)</loc>', xml_data, re.S)
-            self.eblog.log("Sitemap线程：下载Sitemap.xml完成,正在解析xml文件...")
+            self.eblog.log("Sitemap线程-->下载Sitemap.xml完成,正在解析xml文件...")
 
             tuple_list=sorted(self.mydict.iteritems())
             tree_urls = [i[0] for i in tuple_list]
@@ -268,7 +268,7 @@ class Update_window(object):
                         self.tree.delete(value[4])
 
                     self.mydict.__delitem__(key=key)
-                    self.eblog.log("Sitemap线程:本地删除"+key)
+            self.eblog.log("Sitemap线程-->本地删除"+str(tree_urls_))
 
             # sitemap中新添加的
             urls_=list(set(urls).difference(set(c)))
@@ -277,12 +277,13 @@ class Update_window(object):
                 iid = self.append_item([url, "未提交","未提交", cur_time])
                 self.mydict[url] = [url, "未提交","未提交", cur_time, iid]
                 self.content2.config(text="当前处理:正在添加"+url)
-                self.eblog.log("Sitemap线程:本地添加"+url)
-            self.eblog.log("Sitemap线程：关闭sitemap线程,更新完成。")
+
+            self.eblog.log("Sitemap线程-->本地添加"+str(urls_))
+            self.eblog.log("Sitemap线程-->关闭sitemap线程,更新完成。")
             self.close()
         except:
             self.eblog.log(traceback.format_exc())
-            self.eblog.log("Sitemap线程：更新失败")
+            self.eblog.log("Sitemap线程-->更新失败")
 
     def close(self):
         self.newroot.destroy()
