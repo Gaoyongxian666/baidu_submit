@@ -109,7 +109,7 @@ class Main_window(object):
         self.scrollbar.config(command=self.tree.yview)
 
         # 是否加载列表？
-        flag = tk.messagebox.askquestion("加载列表", "是否加载本地列表？\n尽量选“是”，但选“否”不会影响，只是不会展示本地的sitemap信息。\n如果链接数量过万，可能需要加载一分钟")
+        flag = tk.messagebox.askquestion("加载列表", "是否加载本地列表？\n尽量选“是”，选“否”可能会有影响，重启软件。\n如果链接数量过万，可能需要加载一分钟")
         if flag == "yes":
             Tree_control(self.tree, self.eblog)
         else:
@@ -211,13 +211,13 @@ class Update_window(object):
 
         # 进度条
         self.bar = ttk.Progressbar(self.newroot, length=740, mode="indeterminate",orient=tk.HORIZONTAL)
-        self.bar.pack(expand=True)
+        self.bar.place(x=30, y=150,)
         self.bar.start(10)
 
         # 提示内容
         self.content = tk.Label(self.newroot, text="正在下载Sitemap.xml文件...")
         self.content.place(x=30, y=30, )
-        self.content2 = tk.Label(self.newroot, text="下载速度和文件大小以及服务器带宽有关，请耐心等待......")
+        self.content2 = tk.Label(self.newroot, text="下载速度和文件大小以及服务器带宽有关，请耐心等待......",wraplength=740,justify="left")
         self.content2.place(x=30, y=60, )
 
         self.eblog = eblog
@@ -251,7 +251,7 @@ class Update_window(object):
             urls = re.findall(r'<loc>(.+?)</loc>', xml_data, re.S)
             self.eblog.log("Sitemap线程-->下载Sitemap.xml完成,正在解析xml文件...")
 
-            tuple_list=sorted(self.mydict.iteritems())
+            tuple_list=list(self.mydict.iteritems())
             tree_urls = [i[0] for i in tuple_list]
             # 求交集
             c=list(set(urls).intersection(set(tree_urls)))
@@ -260,8 +260,8 @@ class Update_window(object):
             tree_urls_ = list(set(tree_urls).difference(set(c)))
 
             # 交集不动,tree把tree中把不是交集的删掉,把siemaop中不是交集的增添上.
-            for key, value in tuple_list:
-                self.content2.config(text="当前处理:" + key)
+            for key, value in sorted(tuple_list):
+                self.content2.config(text="当前处理-->检查" + key)
                 if key not in c:
                     # 是否删除,看有没有列表
                     if len(self.tree.get_children())!=0:
@@ -272,11 +272,11 @@ class Update_window(object):
 
             # sitemap中新添加的
             urls_=list(set(urls).difference(set(c)))
-            for url in urls_:
+            for url in sorted(urls_):
                 cur_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 iid = self.append_item([url, "未提交","未提交", cur_time])
                 self.mydict[url] = [url, "未提交","未提交", cur_time, iid]
-                self.content2.config(text="当前处理:正在添加"+url)
+                self.content2.config(text="当前处理-->正在添加"+url)
 
             self.eblog.log("Sitemap线程-->本地添加"+str(urls_))
             self.eblog.log("Sitemap线程-->关闭sitemap线程,更新完成。")
